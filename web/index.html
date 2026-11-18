@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>belay</title>
+<meta name="theme-color" content="#171a21">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f1115'/%3E%3Cpath d='M7 10h18M7 16h12M7 22h8' stroke='%234c8dff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+<meta name="belay-monaco" content="/monaco/monaco.js">
+</head>
+<body>
+<header id="topbar">
+  <nav id="views" class="views" aria-label="Views"></nav>
+  <div class="spacer"></div>
+  <div class="actions">
+    <button id="btn-install" class="btn hidden" title="Install belay as an app: own window, and the shortcuts the browser would otherwise take">Install app</button>
+    <button id="btn-palette" class="btn icon" title="Command palette">&#8984;</button>
+    <button id="btn-settings" class="btn icon" title="Settings">&#9881;</button>
+    <button id="btn-help" class="btn icon" title="Help">?</button>
+    <span id="conn" class="conn off" title="Disconnected"></span>
+  </div>
+</header>
+<div id="workspace">
+  <nav id="rail" aria-label="Sidebars"></nav>
+  <aside id="side" class="hidden"></aside>
+  <main id="dock"></main>
+</div>
+<div id="modals"></div>
+<div id="toasts"></div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

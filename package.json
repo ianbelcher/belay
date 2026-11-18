@@ -1,0 +1,127 @@
+{
+  "name": "belay",
+  "version": "0.1.0",
+  "description": "Terminals that keep running: named sessions here and over ssh, held through closing the app and losing the network.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "belay": "./bin/belay.js"
+  },
+  "scripts": {
+    "build": "node scripts/build-hold.mjs && node scripts/gen-icons.mjs && esbuild web/app.js --bundle --format=esm --outdir=public --loader:.css=css --minify --sourcemap --target=es2022 && node scripts/build-monaco.mjs && node scripts/copy-static.mjs",
+    "watch": "node scripts/gen-icons.mjs && node scripts/build-monaco.mjs --dev && node scripts/copy-static.mjs && esbuild web/app.js --bundle --format=esm --outdir=public --loader:.css=css --sourcemap --target=es2022 --watch",
+    "start": "node server/index.js",
+    "dev": "BELAY_DEV=1 node server/index.js",
+    "test": "node --test test/*.test.js && cd hold && go test ./...",
+    "prepare": "npm run build",
+    "test:ui": "node test/ui.mjs",
+    "build:hold": "node scripts/build-hold.mjs",
+    "app": "electron .",
+    "dist": "npm run build && electron-builder --publish never"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@xterm/addon-serialize": "^0.14.0",
+    "@xterm/headless": "^6.0.0",
+    "mustache": "^4.2.0",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-search": "^0.16.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/addon-webgl": "^0.19.0",
+    "@xterm/xterm": "^6.0.0",
+    "dockview-core": "^8.5.1",
+    "electron": "45.2.1",
+    "electron-builder": "26.18.0",
+    "esbuild": "^0.28.2",
+    "monaco-editor": "^0.57.0"
+  },
+  "main": "app/main.js",
+  "productName": "Belay",
+  "author": {
+    "name": "Ian Belcher"
+  },
+  "homepage": "https://github.com/ianbelcher/belay",
+  "build": {
+    "appId": "com.ianbelcher.belay",
+    "productName": "Belay",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "app/**",
+      "server/**",
+      "shared/**",
+      "public/**",
+      "package.json",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "hold/dist",
+        "to": "hold"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "identity": "-",
+      "artifactName": "Belay-mac-${arch}.${ext}",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "linux": {
+      "category": "Development",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "maintainer": "Ian Belcher",
+      "synopsis": "Terminals that keep running",
+      "syncDesktopName": true
+    },
+    "deb": {
+      "depends": [
+        "openssh-client"
+      ],
+      "artifactName": "belay-linux-${arch}.${ext}"
+    },
+    "appImage": {
+      "artifactName": "Belay-linux-${arch}.${ext}"
+    }
+  },
+  "desktopName": "belay.desktop"
+}

@@ -1,0 +1,97 @@
+# Tests on Linux and macOS (the holder's macOS terminal code runs only here), the apps built for both, and a
+# release with them for every v* tag.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache-dependency-path: hold/go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Unit, end-to-end and remote tests, and the holder's
+        run: npm test
+      - name: The UI, and the app
+        if: runner.os == 'Linux'
+        run: |
+          npm i --no-save playwright@1.65.1
+          npx playwright install --with-deps chromium
+          xvfb-run -a npm run test:ui
+          xvfb-run -a node test/app.mjs
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            targets: --linux AppImage deb --x64 --arm64
+          - os: macos-15
+            targets: --mac dmg zip --arm64 --x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache-dependency-path: hold/go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build
+        # Unsigned for now: no Developer ID certificate yet.
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder ${{ matrix.targets }} --publish never
+      - name: The packaged app, end to end (macOS, Apple silicon)
+        if: runner.os == 'macOS'
+        run: |
+          npm i --no-save playwright@1.65.1
+          BELAY_APP="$PWD/dist/mac-arm64/Belay.app/Contents/MacOS/Belay" node test/app.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: belay-${{ runner.os }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Belay ${GITHUB_REF_NAME#v}" --generate-notes dist/*
