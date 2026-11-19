@@ -1,7 +1,7 @@
 // The Belay app: a window on belay, with belay's server running in this process. Closing the window (or
 // quitting) never ends a session: the holders keep them, here and on every host, and the next launch
 // carries on where it was.
-import { app, BrowserWindow, Menu, dialog, shell } from 'electron';
+import { app, BrowserWindow, Menu, dialog, ipcMain, shell } from 'electron';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
@@ -60,6 +60,21 @@ function ours(url) {
   } catch { return false; }
 }
 
+/**
+ * The window's own title bar gives way to belay's top bar, which the window's buttons sit in: on macOS the
+ * traffic lights on its left, centred in its 40 px; elsewhere minimize, maximize and close drawn over its right
+ * end, in its colours (the page sets them to match its theme). The page makes room for them.
+ */
+const TOPBAR = 40;
+const windowChrome = isMac
+  ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 14, y: 14 } }
+  : { titleBarStyle: 'hidden', titleBarOverlay: { color: '#171a21', symbolColor: '#d8dee9', height: TOPBAR - 1 } };
+
+ipcMain.on('titlebar-colors', (e, { color, symbolColor } = {}) => {
+  if (isMac || typeof color !== 'string' || typeof symbolColor !== 'string') return;
+  BrowserWindow.fromWebContents(e.sender)?.setTitleBarOverlay?.({ color, symbolColor, height: TOPBAR - 1 });
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
@@ -68,8 +83,12 @@ function createWindow() {
     minHeight: 400,
     title: 'Belay',
     backgroundColor: '#0f1115',
+    ...windowChrome,
     webPreferences: { preload: path.join(root, 'app', 'preload.cjs'), contextIsolation: true, sandbox: true },
   });
+  // Full screen, macOS hides the traffic lights: the page takes their room back.
+  win.on('enter-full-screen', () => win.webContents.send('fullscreen', true));
+  win.on('leave-full-screen', () => win.webContents.send('fullscreen', false));
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (ours(url)) return { action: 'allow', overrideBrowserWindowOptions: { backgroundColor: '#0f1115' } };
     shell.openExternal(url);

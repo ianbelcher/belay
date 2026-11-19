@@ -33,6 +33,14 @@ a { color: var(--accent); text-decoration: none; }
 .conn.on { background: var(--ok); }
 
 /* view tabs */
+/* In the app the top bar is the window's title bar: it drags the window (its tabs and buttons do not), and it
+   makes room for the window's buttons, the traffic lights on macOS (gone full screen), elsewhere minimize,
+   maximize and close at its right end, in the space the system says they take. */
+body.in-app #topbar { -webkit-app-region: drag; }
+body.in-app #topbar button, body.in-app #topbar .vtab, body.in-app #topbar input, body.in-app #topbar .conn { -webkit-app-region: no-drag; }
+body.app-darwin #topbar { padding-left: 80px; }
+body.app-darwin.app-fullscreen #topbar { padding-left: 10px; }
+body.in-app:not(.app-darwin) #topbar { padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100vw - 140px)) + 10px); }
 .views { display: flex; align-items: stretch; gap: 2px; height: 100%; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 0 1 auto; }
 .views > * { flex-shrink: 0; }
 /* Pills, so the only accent line on screen is the focused tab's in the layout below. */

@@ -62,6 +62,38 @@ try {
   const out = await fetch(`http://127.0.0.1:${port}/api/state`);
   assert.equal(out.status, 401, 'other programs here are kept out');
 
+  step("the top bar is the window's title bar: its buttons sit in it, clear of belay's");
+  const bar = await win.evaluate(() => {
+    const r = (el) => el.getBoundingClientRect();
+    const top = document.getElementById('topbar');
+    const wco = navigator.windowControlsOverlay;
+    return {
+      classes: [...document.body.classList],
+      platform: window.belayApp.platform,
+      overlay: wco?.visible ?? null,
+      controls: wco?.visible ? (({ x, width, height }) => ({ x, width, height }))(wco.getTitlebarAreaRect()) : null,
+      bar: r(top).toJSON(),
+      actions: r(top.querySelector('.actions')).toJSON(),
+      views: r(document.getElementById('views')).toJSON(),
+      drag: getComputedStyle(top).webkitAppRegion || getComputedStyle(top).getPropertyValue('-webkit-app-region'),
+      noDrag: getComputedStyle(document.getElementById('btn-help')).getPropertyValue('-webkit-app-region'),
+    };
+  });
+  assert.ok(bar.classes.includes('in-app') && bar.classes.includes(`app-${bar.platform}`), 'the page knows which system');
+  assert.equal(bar.drag, 'drag', 'the top bar drags the window');
+  assert.equal(bar.noDrag, 'no-drag', 'its buttons are buttons');
+  if (bar.platform === 'darwin') {
+    assert.ok(bar.views.left >= 76, `the tabs start right of the traffic lights (at ${bar.views.left})`);
+  } else {
+    assert.equal(bar.overlay, true, 'minimize, maximize and close are drawn over the top bar');
+    // The title bar area is what is left of the window's width once its buttons have theirs.
+    const controlsLeft = bar.controls.x + bar.controls.width;
+    assert.ok(controlsLeft < bar.bar.width, 'the buttons take room at the right');
+    assert.ok(bar.actions.right <= controlsLeft, `belay's buttons end (${bar.actions.right}) before the window's begin (${controlsLeft})`);
+    assert.equal(bar.controls.height, bar.bar.height - 1, 'the same height as the top bar, above its border');
+  }
+  await win.screenshot({ path: path.join(os.tmpdir(), 'belay-topbar.png'), clip: { x: 0, y: 0, width: bar.bar.width, height: 60 } });
+
   step("the menu leaves belay's keys to belay");
   const accels = await app.evaluate(({ Menu }) => {
     const all = [];

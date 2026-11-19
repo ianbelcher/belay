@@ -25,6 +25,11 @@ const app = {
   applySettings() {
     const st = this.settings();
     document.documentElement.dataset.theme = st.theme || 'dark';
+    // In the app, the window's own buttons (outside macOS) are drawn over the top bar, in its colours.
+    if (window.belayApp?.setTitleBarColors) {
+      const css = getComputedStyle(document.documentElement);
+      window.belayApp.setTitleBarColors({ color: css.getPropertyValue('--bg2').trim(), symbolColor: css.getPropertyValue('--fg').trim() });
+    }
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', st.theme === 'light' ? '#f3f4f6' : '#171a21');
     this.dock?.setTheme(st.theme);
     for (const p of this.allPanels()) p.applySettings?.();
@@ -88,6 +93,12 @@ if (!window.belayApp) {
   });
   window.addEventListener('appinstalled', () => { app.installPrompt = null; document.getElementById('btn-install').classList.add('hidden'); });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+// In the app the top bar is the window's title bar (see app.css): which system, for the room its buttons need.
+if (window.belayApp) {
+  document.body.classList.add('in-app', `app-${window.belayApp.platform}`);
+  window.belayApp.onFullScreen?.((on) => document.body.classList.toggle('app-fullscreen', on));
 }
 
 app.keys.install();

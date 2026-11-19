@@ -1,6 +1,6 @@
 {
   "name": "belay",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Terminals that keep running: named sessions here and over ssh, held through closing the app and losing the network.",
   "type": "module",
   "private": true,
