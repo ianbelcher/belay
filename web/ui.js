@@ -444,18 +444,15 @@ export function tabMenu(app, panelId, ev) {
 /** The + after a group's tabs. */
 export function addMenu(app, group, anchor) {
   const from = app.dock.sessionOf(group)?.id;
-  const spec = hereSpec(app, null, from);
-  const v = app.dock.activeView() || {};
-  const on = v.host ? ` on ${v.user ? `${v.user}@` : ''}${v.host}` : '';
-  const where = v.host ? v.dir || '~' : shortPath(v.dir || spec.cwd, app.client.state.server.home);
+  // Names only: everything here is the project's, in its place.
   showMenu([
-    ...launchers(app).map((t) => [`${launcherLabel(t)}${on}`, () => openHere(app, t.id, { from, group }), where]),
+    ...launchers(app).map((t) => [launcherLabel(t), () => openHere(app, t.id, { from, group })]),
     null,
-    ['Notes', () => app.dock.showNotes({ group }).catch((e) => toast(e.message)), "this project's"],
-    ['Post-its', () => app.dock.showWall({ group }).catch((e) => toast(e.message)), "this project's"],
-    ['File…', () => openFileDialog(app, { group }), v.host || ''],
-    ['Web page…', () => openWebDialog(app, { group }), 'in this browser'],
-    ['Remote page…', () => openWebDialog(app, { group, remote: true }), v.host || 'this machine'],
+    ['Notes', () => app.dock.showNotes({ group }).catch((e) => toast(e.message))],
+    ['Post-its', () => app.dock.showWall({ group }).catch((e) => toast(e.message))],
+    ['File…', () => openFileDialog(app, { group })],
+    ['Web page…', () => openWebDialog(app, { group })],
+    ['Remote page…', () => openWebDialog(app, { group, remote: true })],
   ], anchor);
 }
 

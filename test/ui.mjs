@@ -352,7 +352,7 @@ try {
   await page.keyboard.type('mkdir -p sub && cd sub\n');
   await until(async () => (await api('GET', `/api/sessions/${first.id}`)).cwd === path.join(projDir, 'sub'));
   await page.click('.proj.active .gadd-btn');
-  assert.equal(await page.textContent('.menu-item >> nth=0'), `Shell${projDir}`);
+  assert.equal(await page.textContent('.menu-item >> nth=0'), 'Shell', 'names only: the place is the project\'s');
   const second = await newSession(() => page.click('.menu-item >> nth=0'));
   await page.waitForFunction(() => window.belay.panels.size === 2);
   assert.equal(second.cwd, projDir);
@@ -659,7 +659,7 @@ try {
   await page.waitForFunction(() => window.belay.panels.size === 1);
   await api('POST', `/api/hook/claude?belay=${rc.id}`, { session_id: 'conv-123', hook_event_name: 'Stop' });
   await page.click('.proj.active .gadd-btn');
-  assert.equal(await page.textContent('.menu-item >> nth=0'), 'Shell on me@belay-test.invalid/srv/app');
+  assert.equal(await page.textContent('.menu-item >> nth=0'), 'Shell');
   const rsh = await newSession(() => page.click('.menu-item >> nth=0'));
   assert.equal(rsh.templateId, 'shell');
   assert.deepEqual([rsh.host, rsh.vars], ['me@belay-test.invalid', {}], 'on the project\'s host, not one of its own');
@@ -669,10 +669,9 @@ try {
   const k9s = await api('POST', '/api/templates', { name: 'k9s', command: 'k9s' });
   await page.click('.proj.active .gadd-btn');
   assert.deepEqual(await page.$$eval('.menu-item', (m) => m.map((x) => x.firstChild.textContent)),
-    ['Shell on me@belay-test.invalid', 'Claude on me@belay-test.invalid', 'Codex on me@belay-test.invalid', 'opencode on me@belay-test.invalid', 'k9s on me@belay-test.invalid', 'Command… on me@belay-test.invalid',
-      'Notes', 'Post-its', 'File…', 'Web page…', 'Remote page…'], 'no New session… any more');
+    ['Shell', 'Claude', 'Codex', 'opencode', 'k9s', 'Command…', 'Notes', 'Post-its', 'File…', 'Web page…', 'Remote page…'], 'names only, no New session…');
   await shot('08b-add-menu');
-  const rk = await newSession(() => page.click('.menu-item:has-text("k9s on")'));
+  const rk = await newSession(() => page.click('.menu-item:text-is("k9s")'));
   assert.deepEqual([rk.host, rk.dir, rk.command], ['me@belay-test.invalid', '/srv/app', 'k9s'], 'your own template runs on the host too');
   await page.waitForFunction((sid) => window.belay.panels.has(`p-${sid}`), rk.id);
   await api('DELETE', `/api/sessions/${rk.id}`);
@@ -686,7 +685,7 @@ try {
   assert.match(await page.textContent('.modal .preview'), /^# on me@belay-test\.invalid, in \/srv\/app/, "the project's place");
   await page.click('.modal .btn:text-is("Cancel")');
   await page.click('.proj.active .gadd-btn');
-  const rcx = await newSession(() => page.click('.menu-item:has-text("Codex on")'));
+  const rcx = await newSession(() => page.click('.menu-item:text-is("Codex")'));
   assert.equal(rcx.templateId, 'codex');
   assert.deepEqual([rcx.host, rcx.vars], ['me@belay-test.invalid', {}], 'on the project\'s host, nothing of its own');
   assert.deepEqual([rcx.host, rcx.command], ['me@belay-test.invalid', 'codex --no-daemon']);
